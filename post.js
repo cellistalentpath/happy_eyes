@@ -11,6 +11,12 @@ let timeItTookSeq2 = 0;
 let timeItTookSeq3 = 0;
 let timeItTookSeq4 = 0;
 
+// 50% chance for each sequential data pack to work
+let didItWork1 = Math.floor(Math.random() * 2);
+let didItWork2 = Math.floor(Math.random() * 2);
+let didItWork3 = Math.floor(Math.random() * 2);
+let didItWork4 = Math.floor(Math.random() * 2);
+
 let totalSeqTime = 0;
 let shortestSameTime = 0;
 
@@ -30,7 +36,7 @@ const options = {
 };
 
 const requestArray = [];
-for (i = 0; i < 5; i++) {
+for (i = 0; i < 1; i++) {
 	requestArray[i] = http.request(options, res => {
 		console.log(`STATUS: ${res.statusCode}`);
 		console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
@@ -48,6 +54,7 @@ for (i = 0; i < 5; i++) {
 	});
 }
 
+// Only take the fastest request/response
 function requestSameTime(time) {
 	requestArray[0].write(postData);
 	switch (time) {
@@ -85,38 +92,19 @@ function requestSequential(time) {
 	switch (time) {
 		case "time1":
 			requestArray[1].write(postData);
-			totalSeqTime += timeItTookSeq1;
+			requestArray[1].end();
 			break;
 		case "time2":
 			requestArray[2].write(postData);
-			totalSeqTime += timeItTookSeq2;
+			requestArray[2].end();
 			break;
 		case "time3":
 			requestArray[3].write(postData);
-			totalSeqTime += timeItTookSeq3;
+			requestArray[3].end();
 			break;
 		case "time4":
 			requestArray[4].write(postData);
-			totalSeqTime += timeItTookSeq4;
-			requestArray[1].end();
-			requestArray[2].end();
-			requestArray[3].end();
 			requestArray[4].end();
-			setTimeout(function() {
-				console.log(
-					"shortest same time is: " +
-						(shortestSameTime / 1000).toFixed(2) +
-						" seconds."
-				);
-				console.log(
-					"sequential time: " + (totalSeqTime / 1000).toFixed(2) + " seconds."
-				);
-				console.log(
-					"Starting the connections at the same time is: " +
-						(100 - (shortestSameTime / totalSeqTime) * 100).toFixed(2) +
-						"% faster."
-				);
-			}, 100);
 			break;
 	}
 }
@@ -141,24 +129,117 @@ function happyEyes() {
 }
 
 function happySequential() {
-	timeSeq1 = setTimeout(function() {
-		requestSequential("time1");
+	setTimeout(function() {
 		console.log("**********Sending requests sequentially...**********");
-		timeSeq2 = setTimeout(function() {
-			requestSequential("time2");
-			timeSeq3 = setTimeout(function() {
-				requestSequential("time3");
-				timeSeq4 = setTimeout(function() {
-					requestSequential("time4");
-				}, (timeItTookSeq4 = Math.floor(Math.random() * 3000)));
-			}, (timeItTookSeq3 = Math.floor(Math.random() * 3000)));
-		}, (timeItTookSeq2 = Math.floor(Math.random() * 3000)));
+		totalSeqTime += timeItTookSeq1;
+		if (didItWork1) {
+			requestArray[1] = http.request(options, res => {
+				console.log(`STATUS: ${res.statusCode}`);
+				console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+				res.setEncoding("utf8");
+				res.on("data", chunk => {
+					console.log(`BODY: ${chunk}`);
+				});
+				res.on("end", () => {
+					console.log("No more data in response.");
+				});
+			});
+			requestArray[1].on("error", e => {
+				console.error(`problem with request: ${e.message}`);
+			});
+			requestSequential("time1");
+		} else {
+			setTimeout(function() {
+				totalSeqTime += timeItTookSeq2;
+				if (didItWork2) {
+					requestArray[2] = http.request(options, res => {
+						console.log(`STATUS: ${res.statusCode}`);
+						console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+						res.setEncoding("utf8");
+						res.on("data", chunk => {
+							console.log(`BODY: ${chunk}`);
+						});
+						res.on("end", () => {
+							console.log("No more data in response.");
+						});
+					});
+					requestArray[2].on("error", e => {
+						console.error(`problem with request: ${e.message}`);
+					});
+					requestSequential("time2");
+				} else {
+					setTimeout(function() {
+						totalSeqTime += timeItTookSeq3;
+						if (didItWork3) {
+							requestArray[3] = http.request(options, res => {
+								console.log(`STATUS: ${res.statusCode}`);
+								console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+								res.setEncoding("utf8");
+								res.on("data", chunk => {
+									console.log(`BODY: ${chunk}`);
+								});
+								res.on("end", () => {
+									console.log("No more data in response.");
+								});
+							});
+							requestArray[3].on("error", e => {
+								console.error(`problem with request: ${e.message}`);
+							});
+							requestSequential("time3");
+						} else {
+							setTimeout(function() {
+								totalSeqTime += timeItTookSeq4;
+								if (didItWork4) {
+									requestArray[4] = http.request(options, res => {
+										console.log(`STATUS: ${res.statusCode}`);
+										console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+										res.setEncoding("utf8");
+										res.on("data", chunk => {
+											console.log(`BODY: ${chunk}`);
+										});
+										res.on("end", () => {
+											console.log("No more data in response.");
+										});
+									});
+									requestArray[4].on("error", e => {
+										console.error(`problem with request: ${e.message}`);
+									});
+									requestSequential("time4");
+								}
+							}, (timeItTookSeq4 = Math.floor(Math.random() * 3000)));
+						}
+					}, (timeItTookSeq3 = Math.floor(Math.random() * 3000)));
+				}
+			}, (timeItTookSeq2 = Math.floor(Math.random() * 3000)));
+		}
 	}, (timeItTookSeq1 = Math.floor(Math.random() * 3000)));
+}
+
+function calculations() {
+	setTimeout(function() {
+		console.log(
+			"shortest same time is: " +
+				(shortestSameTime / 1000).toFixed(2) +
+				" seconds."
+		);
+		console.log(
+			"sequential time: " + (totalSeqTime / 1000).toFixed(2) + " seconds."
+		);
+		console.log(
+			"Starting the connections at the same time is: " +
+				(100 - (shortestSameTime / totalSeqTime) * 100).toFixed(2) +
+				"% faster."
+		);
+	}, 100);
 }
 
 function benchMark() {
 	// Console the times and percentages
 	happyEyes();
+	// Giving the calculations some time so that they aren't in the middle of the responses
+	setTimeout(function() {
+		calculations();
+	}, 9000);
 }
 
 benchMark();
