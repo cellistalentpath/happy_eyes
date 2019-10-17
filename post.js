@@ -85,7 +85,9 @@ function requestSameTime(time) {
 	}
 	requestArray[0].end();
 	// After same time is done, run sequential
-	happySequential();
+	setTimeout(function() {
+		happySequential();
+	}, 3000);
 }
 
 function requestSequential(time) {
@@ -129,8 +131,8 @@ function happyEyes() {
 }
 
 function happySequential() {
+	console.log("**********Sending requests sequentially...**********");
 	setTimeout(function() {
-		console.log("**********Sending requests sequentially...**********");
 		totalSeqTime += timeItTookSeq1;
 		if (didItWork1) {
 			requestArray[1] = http.request(options, res => {
@@ -148,6 +150,7 @@ function happySequential() {
 				console.error(`problem with request: ${e.message}`);
 			});
 			requestSequential("time1");
+			calculations();
 		} else {
 			setTimeout(function() {
 				totalSeqTime += timeItTookSeq2;
@@ -167,6 +170,7 @@ function happySequential() {
 						console.error(`problem with request: ${e.message}`);
 					});
 					requestSequential("time2");
+					calculations();
 				} else {
 					setTimeout(function() {
 						totalSeqTime += timeItTookSeq3;
@@ -186,6 +190,7 @@ function happySequential() {
 								console.error(`problem with request: ${e.message}`);
 							});
 							requestSequential("time3");
+							calculations();
 						} else {
 							setTimeout(function() {
 								totalSeqTime += timeItTookSeq4;
@@ -205,6 +210,9 @@ function happySequential() {
 										console.error(`problem with request: ${e.message}`);
 									});
 									requestSequential("time4");
+									calculations();
+								} else {
+									console.log("No Sequential requests could get through.");
 								}
 							}, (timeItTookSeq4 = Math.floor(Math.random() * 3000)));
 						}
@@ -233,13 +241,4 @@ function calculations() {
 	}, 100);
 }
 
-function benchMark() {
-	// Console the times and percentages
-	happyEyes();
-	// Giving the calculations some time so that they aren't in the middle of the responses
-	setTimeout(function() {
-		calculations();
-	}, 9000);
-}
-
-benchMark();
+happyEyes();
